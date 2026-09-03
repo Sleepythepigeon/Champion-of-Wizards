@@ -16,11 +16,21 @@ public class TileScript : MonoBehaviour, IPointerEnterHandler, IPointerExitHandl
     private EnemyBehaviour _enemy;
 
     public List<TileScript> _neighbors = new List<TileScript>();
+
     public bool isWall;
     public bool hasPlayer;
     public bool hasEnemy;
 
+    #region A*Pathfinding
+    private Pathfinding pathFinding;
     public Vector2 tilePos;
+    public int gCost;
+    public int hCost;
+    public int fCost;
+
+    #endregion
+
+    public TileScript cameFromTile;
     public MeshRenderer meshRenderer;
 
     private void Awake()
@@ -31,6 +41,7 @@ public class TileScript : MonoBehaviour, IPointerEnterHandler, IPointerExitHandl
         _player = FindFirstObjectByType<PlayerScript>();
         _holdingScript = FindFirstObjectByType<HoldingScript>();
         _enemy = FindFirstObjectByType<EnemyBehaviour>();
+        pathFinding = FindFirstObjectByType<Pathfinding>();
 
         if(isWall)
         {
@@ -152,10 +163,26 @@ public class TileScript : MonoBehaviour, IPointerEnterHandler, IPointerExitHandl
             if (isInRange)
             {
                 _holdingScript.isHoldingPlayer = false;
-                _player.transform.position = new Vector3(tilePos.x, _objectPlayer.transform.position.y, tilePos.y);
+                //_player.transform.position = new Vector3(tilePos.x, _objectPlayer.transform.position.y, tilePos.y);
                 _player.meshRenderer.enabled = true;
                 hasPlayer = true;
+                
+
+                List<TileScript> path = pathFinding.FindPath(_player._currentTile, this);
+                if (path != null)
+                {
+                    //Debug.Log("Hello?");
+                    //Debug.DrawLine(new Vector3(0, 5, 0), new Vector3(9, 5, 9), Color.green, 100f);
+                    for (int i = 0; i < path.Count - 1; i++)
+                    {
+                        //Debug.Log("Cycled Path = " + path[i]);
+                        Debug.DrawLine(new Vector3(path[i].tilePos.x,2, path[i].tilePos.y), new Vector3(path[i + 1].tilePos.x,2, path[i + 1].tilePos.y), Color.hotPink, 10f);
+                    }
+                }
+
                 _player._currentTile = this;
+
+
 
                 foreach (TileScript tile in _player._tilesInRange)
                 {
@@ -196,6 +223,11 @@ public class TileScript : MonoBehaviour, IPointerEnterHandler, IPointerExitHandl
         //{
         //    Debug.Log(tile);
         //}
+    }
+
+    public void CalculateFCost()
+    {
+        fCost = gCost + hCost;
     }
 
     
